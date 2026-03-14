@@ -10,6 +10,7 @@ export async function POST(req: Request) {
   }
 
   const { title, projectId, parentId, startDate, dueDate } = await req.json()
+  console.log("Creating stage with data:", { title, projectId, parentId, startDate, dueDate })
 
   if (!title || !projectId) {
     return new Response("Missing title or projectId", { status: 400 })

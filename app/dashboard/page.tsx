@@ -230,21 +230,42 @@ export default function Dashboard() {
   
     const data = await res.json()
   
-    for (const title of data.stages) {
-  
-      await fetch("/api/stages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          title,
-          projectId: selectedProject,
-          parentId: null
+    for (const stage of data.stages) {
+
+        const res = await fetch("/api/stages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            title: stage.title,
+            projectId: selectedProject,
+            parentId: null
+          })
         })
-      })
-    }
+      
+        const created = await res.json()
+      
+        if (stage.children) {
+          for (const child of stage.children) {
+      
+            await fetch("/api/stages", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                title: child.title,
+                projectId: selectedProject,
+                parentId: created.id
+              })
+            })
+      
+          }
+        }
+      }
   
     loadStages(selectedProject)
   }

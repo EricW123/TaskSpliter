@@ -52,7 +52,7 @@ Return JSON only.
     data.candidates?.[0]?.content?.parts?.[0]?.text || "[]"
 
   console.log("AI response:", text)
-  let stages: string[] = []
+  let stages: { title: string; children?: { title: string }[] }[] = []
 
   try {
     stages = JSON.parse(text)

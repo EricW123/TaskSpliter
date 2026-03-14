@@ -1,0 +1,110 @@
+Building TaskSplits: A Hierarchical Project Planning Tool with AI Assistance
+Introduction
+
+Managing complex projects often requires breaking large goals into smaller, structured tasks. While many productivity tools exist, most either provide very simple task lists or overly complex project management systems designed for teams. For individual users, especially students and developers working on multi-step projects, there is a gap between simplicity and structured planning.
+
+TaskSplits was designed to address this gap. The goal of the project is to create a lightweight planning tool that allows users to organize projects into hierarchical stages, track progress over time, and generate task suggestions using artificial intelligence. Instead of forcing users into rigid workflows, TaskSplits focuses on flexible task decomposition and clear visualization of progress.
+
+The system was implemented as a full-stack web application using modern web technologies including Next.js, TypeScript, Prisma, and SQLite. In addition to core task management features, the project integrates the Google Gemini API to generate suggested stage plans automatically based on a project title.
+
+This blog post describes the motivation behind TaskSplits, the architecture of the system, the key implementation decisions, and the integration of AI-assisted planning. It also reflects on lessons learned during the development process and potential improvements for future iterations.
+
+Problem and Motivation
+
+Breaking down complex projects into manageable pieces is a fundamental productivity technique. However, most common task management tools have limitations when dealing with hierarchical planning.
+
+Simple task managers such as basic to-do lists allow users to create tasks and mark them as complete, but they rarely support structured hierarchies or progress tracking across nested tasks. On the other hand, professional project management tools such as Jira or Asana often introduce significant overhead and are designed primarily for large teams rather than individual users.
+
+The motivation behind TaskSplits was to design a system that sits between these extremes. The system needed to satisfy several design goals:
+
+Support hierarchical task decomposition.
+
+Provide automatic progress tracking across nested tasks.
+
+Allow users to quickly generate structured task plans.
+
+Remain lightweight and easy to use.
+
+Another important motivation was to explore the integration of artificial intelligence into productivity workflows. Instead of requiring users to manually create all stages of a project, the system can suggest an initial task structure using a language model. This approach combines human planning with AI assistance, allowing users to start with a structured outline that can later be refined.
+
+These goals guided both the system architecture and the feature set implemented in TaskSplits.
+
+System Architecture
+
+TaskSplits is implemented as a full-stack web application using a modern TypeScript-based stack.
+
+The frontend is built with Next.js and React, using the App Router architecture. The user interface is styled using TailwindCSS to allow rapid development of clean, responsive components. The frontend communicates with backend API routes through standard HTTP requests.
+
+The backend logic is implemented using Next.js API routes. This approach simplifies deployment by allowing both frontend and backend code to live in the same project while still maintaining a clear separation between user interface and server-side logic.
+
+Data persistence is handled using Prisma ORM with a SQLite database. Prisma provides type-safe database access and simplifies schema management through migrations.
+
+The core data model of the system is built around three main entities:
+
+User
+Project
+Stage
+
+Each user can create multiple projects. A project contains a tree of stages that represent hierarchical tasks. Instead of separating stages and subtasks into different models, the system uses a self-referential relationship where each stage can have a parent stage. This allows unlimited nesting of tasks.
+
+The resulting hierarchy looks like this:
+
+Project
+└ Stage
+└ Stage
+└ Stage
+
+This design allows complex projects to be represented naturally while keeping the database schema simple.
+
+Continuous integration is implemented using GitHub Actions. The CI workflow installs dependencies, runs integration tests, and builds the project automatically on each push.
+
+Implementation Details
+
+One of the key implementation challenges was managing the stage hierarchy while maintaining correct completion status and progress tracking.
+
+Each stage contains a boolean completed field. However, completion status must propagate through the hierarchy. If all child stages are completed, the parent stage should automatically become completed. Conversely, if any child stage becomes incomplete, the parent stage must also revert to incomplete.
+
+This propagation is implemented in the backend API layer. Whenever a stage's completion status is updated, the system recursively checks parent stages and updates their completion state accordingly. This ensures consistency across the entire stage tree.
+
+Another important feature is progress calculation. Instead of simply counting completed tasks, TaskSplits calculates progress recursively. Leaf nodes contribute either 0 or 1 depending on completion, while parent nodes compute their progress as the average of their children. This approach provides a more accurate representation of project progress across hierarchical tasks.
+
+The frontend dashboard displays projects in a sidebar and renders the stage hierarchy using a recursive React component. Users can create stages, nest subtasks, rename tasks inline, and toggle completion using checkboxes. The user interface updates dynamically whenever the stage tree changes.
+
+Dates can also be assigned to stages. Users can specify a start date and due date for each stage, allowing projects to include simple scheduling information.
+
+Integration tests were written to validate the core API functionality. These tests cover authentication, project creation and deletion, stage CRUD operations, completion propagation, and date updates.
+
+AI Integration
+
+One of the most interesting features of TaskSplits is its integration with the Google Gemini API. The system can generate suggested project stages automatically based on a project title.
+
+When the user clicks the “AI Suggest Stages” button in the dashboard, the frontend sends a request to the backend AI endpoint. The server constructs a prompt that asks the Gemini model to break the project into several stages and subtasks. The model returns a JSON structure describing the suggested stage tree.
+
+For example, a project titled “Write Research Paper” might produce the following structure:
+
+Literature Review
+Research Design
+Data Collection
+Analysis
+Writing
+Editing
+
+Each stage can also include subtasks generated by the model.
+
+The backend parses the JSON response and automatically creates the corresponding stages in the database. This allows users to start with an initial project structure generated by AI and then customize it manually.
+
+Care was taken to ensure the AI output was predictable and easy to parse. The prompt explicitly instructs the model to return valid JSON without additional explanation text. This greatly simplifies the integration.
+
+Lessons Learned and Future Work
+
+Developing TaskSplits provided several valuable insights into both software architecture and AI integration.
+
+First, hierarchical data structures introduce unique challenges when it comes to state propagation and progress calculation. Designing a clean recursive model for completion tracking required careful thought but ultimately resulted in a flexible and intuitive system.
+
+Second, integrating AI into an application requires careful prompt design. Language models often produce inconsistent outputs unless the prompt clearly specifies formatting requirements. By enforcing strict JSON output, the system was able to reliably convert AI suggestions into database records.
+
+Third, modern full-stack frameworks such as Next.js significantly simplify development. By combining frontend components and backend API routes in a single project, the system remained easy to manage while still maintaining clear architectural boundaries.
+
+In the future, several improvements could further enhance the system. These include adding collaborative features for teams, improving the visualization of project timelines, and allowing users to customize AI-generated stage templates.
+
+Overall, TaskSplits demonstrates how hierarchical task planning and AI-assisted suggestions can be combined to create a practical and lightweight productivity tool.
